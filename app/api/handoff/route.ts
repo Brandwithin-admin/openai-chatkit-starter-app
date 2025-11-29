@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 export const runtime = "edge";
 
 type HandoffPayload = {
+  type: "progressive_profile" | "human_handoff";
   name: string;
   email: string;
   phone?: string | null;
@@ -34,8 +35,13 @@ export async function POST(req: Request) {
 
     const ticketId = Math.random().toString(36).substring(2, 10).toUpperCase();
 
+    const handoffType =
+      body.type === "progressive_profile"
+        ? "🟣 Progressive Profile"
+        : "🟢 Human Handoff";
+
     const text = `
-🟢 *New Thriving Practitioners Handoff*  (#${ticketId})
+${handoffType}  (#${ticketId})
 
 *Name:* ${body.name}
 *Email:* ${body.email}
@@ -43,9 +49,9 @@ export async function POST(req: Request) {
 *Company:* ${body.company || "N/A"}
 
 *Message:*
-${body.message || "_No specific message provided_"}
+${body.message || "_No message provided_"}
 
-*Transcript (for context):*
+*Transcript (context):*
 ${body.transcript || "_No transcript provided_"}
 `.trim();
 
