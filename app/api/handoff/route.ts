@@ -16,9 +16,6 @@ export async function POST(req: Request) {
   try {
     const body = (await req.json()) as HandoffPayload;
 
-    // --------------------------
-    // Validate required fields
-    // --------------------------
     if (!body.name || !body.email) {
       return NextResponse.json(
         { error: "Missing required fields: name and email" },
@@ -26,9 +23,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // --------------------------
-    // ENV variables
-    // --------------------------
     const slackWebhook = process.env.SLACK_WEBHOOK_URL;
     const ghlApiKey = process.env.GHL_API_KEY;
     const ghlLocationId = process.env.GHL_LOCATION_ID;
@@ -36,21 +30,23 @@ export async function POST(req: Request) {
 
     if (!slackWebhook || !ghlApiKey || !ghlLocationId || !transcriptField) {
       console.error("Missing environment variables");
-      return NextResponse.json({ error: "Server misconfiguration" }, { status: 500 });
+      return NextResponse.json(
+        { error: "Server misconfiguration" },
+        { status: 500 }
+      );
     }
 
     // --------------------------
-    // Prepare Slack message
+    // Slack message
     // --------------------------
     const ticketId = Math.random().toString(36).substring(2, 10).toUpperCase();
-
     const handoffType =
       body.type === "progressive_profile"
         ? "🟣 Progressive Profile"
         : "🟢 Human Handoff";
 
     const slackText = `
-${handoffType}  (#${ticketId})
+${handoffType} (#${ticketId})
 
 *Name:* ${body.name}
 *Email:* ${body.email}
@@ -64,12 +60,37 @@ ${body.message || "_No message provided_"}
 ${body.transcript || "_No transcript provided_"}
     `.trim();
 
+    const slackReq = fetch(slackWebhook, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: slackText }),
+    });
+
     // --------------------------
-    // GHL Contact Payload
+    // GHL UPSERT LOGIC
     // --------------------------
+
+    // 1. Search by email
+    const searchUrl = `https://rest.gohighlevel.com/v1/contacts/search?query=${encodeURIComponent(
+      body.email
+    )}`;
+
+    const searchRes = await fetch(searchUrl, {
+      headers: { Authorization: `Bearer ${ghlApiKey}` },
+    });
+
+    let existingContactId: string | null = null;
+
+    if (searchRes.ok) {
+      const data = await searchRes.json();
+      if (data?.contacts?.length > 0) {
+        existingContactId = data.contacts[0].id;
+      }
+    }
+
     const ghlPayload = {
       locationId: ghlLocationId,
-      firstName: body.name, // Option B → store full name in firstName
+      firstName: body.name,
       lastName: "",
       email: body.email,
       phone: body.phone || "",
@@ -87,32 +108,38 @@ ${body.transcript || "_No transcript provided_"}
       ],
     };
 
-    // --------------------------
-    // Fire Slack + GHL together
-    // --------------------------
-    const slackRequest = fetch(slackWebhook, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: slackText }),
-    });
+    let ghlReq;
 
-    const ghlRequest = fetch("https://rest.gohighlevel.com/v1/contacts/", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${ghlApiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(ghlPayload),
-    });
+    // 2. If exists → PATCH
+    if (existingContactId) {
+      ghlReq = fetch(
+        `https://rest.gohighlevel.com/v1/contacts/${existingContactId}`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${ghlApiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(ghlPayload),
+        }
+      );
+    } else {
+      // 3. Else → create new
+      ghlReq = fetch("https://rest.gohighlevel.com/v1/contacts/", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${ghlApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(ghlPayload),
+      });
+    }
 
-    const [slackRes, ghlRes] = await Promise.all([slackRequest, ghlRequest]);
+    const [slackRes, ghlRes] = await Promise.all([slackReq, ghlReq]);
 
-    // Slack errors
     if (!slackRes.ok) {
       console.error("Slack error:", await slackRes.text());
     }
-
-    // GHL errors
     if (!ghlRes.ok) {
       console.error("GHL error:", await ghlRes.text());
     }
