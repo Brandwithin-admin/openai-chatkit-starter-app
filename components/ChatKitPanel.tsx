@@ -193,7 +193,6 @@ export function ChatKitPanel({
           body: JSON.stringify({
             workflow: { id: WORKFLOW_ID },
             chatkit_configuration: {
-              // enable attachments
               file_upload: {
                 enabled: true,
               },
@@ -274,13 +273,16 @@ export function ChatKitPanel({
     composer: {
       placeholder: PLACEHOLDER_INPUT,
       attachments: {
-        // Enable attachments
         enabled: true,
       },
     },
     threadItemActions: {
       feedback: false,
     },
+
+    // ===========================
+    // 🟢 TOOL: handoff_to_slack
+    // ===========================
     onClientTool: async (invocation: {
       name: string;
       params: Record<string, unknown>;
@@ -312,8 +314,47 @@ export function ChatKitPanel({
         return { success: true };
       }
 
+      // ===========================
+      // 🟣 NEW: handoff_to_slack
+      // ===========================
+      if (invocation.name === "handoff_to_slack") {
+        try {
+          if (isDev) {
+            console.log("🔥 TOOL INVOCATION:", invocation.params);
+          }
+
+          const response = await fetch("/api/handoff", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(invocation.params),
+          });
+
+          if (!response.ok) {
+            throw new Error(`Server error: ${response.status}`);
+          }
+
+          return {
+            success: true,
+            message:
+              invocation.params.type === "progressive_profile"
+                ? "Thanks! I’ve saved your details — I’ll personalise things from here."
+                : "Great — your details have been sent to the Thriving Practitioners team. Someone will reach out soon.",
+          };
+        } catch (err) {
+          console.error("❌ Slack handoff failed:", err);
+          return {
+            success: false,
+            message:
+              "Something went wrong sending your details — please try again.",
+          };
+        }
+      }
+
       return { success: false };
     },
+
     onResponseEnd: () => {
       onResponseEnd();
     },
@@ -324,8 +365,6 @@ export function ChatKitPanel({
       processedFacts.current.clear();
     },
     onError: ({ error }: { error: unknown }) => {
-      // Note that Chatkit UI handles errors for your users.
-      // Thus, your app code doesn't need to display errors on UI.
       console.error("ChatKit error", error);
     },
   });
