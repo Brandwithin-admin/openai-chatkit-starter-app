@@ -13,7 +13,7 @@ export const STARTER_PROMPTS: StartScreenPrompt[] = [
   },
   {
     label: "How can I get discovered in AI search?",
-    prompt: "Explain the exact steps a natural health practitioner should take to get discovered in AI search. Use Thriving Practitioners’ frameworks: AEO, Micro Pages, website clarity, client questions, comparison pages, structured authority signals, and ethical content. Reference and link to the relevant pages or blog posts on the Thriving Practitioners website that cover AI visibility, Answer Engine Optimisation, and modern search behaviour.",
+    prompt: "Explain the exact steps a natural health practitioner should take to get discovered in AI search. Reference and link to the relevant pages or blog posts on the Thriving Practitioners website that cover AI visibility, Answer Engine Optimisation, and modern search behaviour.",
     icon: "circle-question",
   },
   {
