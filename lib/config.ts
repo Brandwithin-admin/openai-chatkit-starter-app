@@ -8,7 +8,7 @@ export const CREATE_SESSION_ENDPOINT = "/api/create-session";
 export const STARTER_PROMPTS: StartScreenPrompt[] = [
   {
     label: "Where should I start?",
-    prompt: "“Guide me on where to start inside Thriving Practitioners based on my needs as a natural health practitioner. Provide a simple pathway and link me to the most relevant resources, blogs, and pages from the Thriving Practitioners website. Prioritise clarity, beginner-friendly steps, and the core frameworks (AEO, Micro Pages, Comparison Pages, client clarity, website essentials).",
+    prompt: "“Guide me on where to start inside Thriving Practitioners based on my needs as a natural health practitioner. Provide a simple pathway and link me to the most relevant resources, blogs, and pages from the Thriving Practitioners website.",
     icon: "circle-question",
   },
   {
