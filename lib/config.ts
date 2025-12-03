@@ -7,15 +7,26 @@ export const CREATE_SESSION_ENDPOINT = "/api/create-session";
 
 export const STARTER_PROMPTS: StartScreenPrompt[] = [
   {
-    label: "What can you do?",
-    prompt: "What can you do?",
+    label: "Where should I start inside Thriving Practitioners?",
+    prompt: "Where should I start inside Thriving Practitioners?",
+    icon: "circle-question",
+  },
+  {
+    label: "How can I get discovered in AI search?",
+    prompt: "How can I get discovered in AI search?",
+    icon: "circle-question",
+  },
+  {
+    label: "Show me resources or trainings that can help me today.",
+    prompt: "Show me resources or trainings that can help me today.",
     icon: "circle-question",
   },
 ];
 
 export const PLACEHOLDER_INPUT = "Ask anything...";
 
-export const GREETING = "How can I help you today?";
+export const GREETING =
+  "How can I support you in growing your practice today?";
 
 export const getThemeConfig = (theme: ColorScheme): ThemeOption => ({
   color: {
@@ -30,6 +41,4 @@ export const getThemeConfig = (theme: ColorScheme): ThemeOption => ({
     },
   },
   radius: "round",
-  // Add other theme options here
-  // chatkit.studio/playground to explore config options
 });
